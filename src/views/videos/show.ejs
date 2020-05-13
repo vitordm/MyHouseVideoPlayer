@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <%- include('../partials/head.ejs') %>
+</head>
+
+<body>
+
+    <%- include('../partials/nav.ejs') %>
+
+    <main role="main" class="container">
+
+        <div class="row">
+            <div class="embed-responsive embed-responsive-16by9">
+                <video class="embed-responsive-item" src="/videos/stream/<%= video.id %>" controls>
+                    <% if (video.subtitles && video.subtitles.length > 0) { %>
+                    <% for (let subtitle of video.subtitles) { %>
+                    <track label="<%= subtitle.name  %>" kind="subtitles" srclang="en"
+                        src="/video/subtitle/<%= subtitle.id  %>">
+                    <% } %>
+                    <% } %>
+                </video>
+            </div>
+        </div>
+
+        <div id="div-loading" class="row mt-5" style="display: none;">
+            <i class="fas fa-circle-notch fa-2x fa-spin text-success"></i>
+            &nbsp;&nbsp; <h3 class="m-0">Loading...</h3>
+        </div>
+
+
+    </main>
+
+    <%- include('../partials/scripts.ejs') %>
+
+</body>
+
+</html>

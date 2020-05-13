@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <%- include('../partials/head.ejs') %>
+</head>
+
+<body>
+
+    <%- include('../partials/nav.ejs') %>
+
+    <main role="main" class="container">
+
+        <form action="/video/save" method="post" id="form-add-video">
+            <div class="form-group">
+                <label for="path">Path of folder </label>
+                <input type="text" class="form-control form-control-lg" name="path" id="path" required>
+            </div>
+
+            <button class="btn btn-lg btn-primary" type="submit">Enviar</button>
+            <button class="btn btn-lg btn-secondary" type="reset">Reset</button>
+        </form>
+
+        <div id="div-loading" class="row mt-5" style="display: none;">
+            <i class="fas fa-circle-notch fa-2x fa-spin text-success"></i>
+            &nbsp;&nbsp; <h3 class="m-0">Loading...</h3>
+        </div>
+
+
+    </main>
+
+    <%- include('../partials/scripts.ejs') %>
+    <script>
+        $('#form-add-video').on('submit', (event) => {
+            event.preventDefault();
+
+
+            $('#div-loading').show();
+
+            const form = $('#form-add-video');
+            var obj = form.serializeToJSON();
+
+            $.post(form.attr('action'), obj, (event) => {
+                bootbox.alert(`<i class="far fa-thumbs-up text-success"></i> Success!`);
+                $('#div-loading').hide();
+            })
+                .fail((event) => {
+
+                    if (event.status >= 400 && event.status < 500) {
+                        bootbox.alert(`<i class="fas fa-exclamation-circle text-warning"></i> ${event.responseText}`);
+                    } else {
+                        console.error(event);
+                        bootbox.dialog({
+                            title: `<i class="fas fa-exclamation-circle text-danger"></i> Something went wrong!`,
+                            message: 'Please check the console!',
+                            closeButton: true,
+                            buttons: {
+                                ok: {
+                                    label: "Close",
+                                    className: 'btn-info',
+                                }
+                            }
+                        });
+
+                    }
+
+                    $('#div-loading').hide();
+
+
+                })
+
+
+            return false;
+        })
+    </script>
+</body>
+
+</html>
