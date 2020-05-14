@@ -13,7 +13,7 @@
 
         <div class="row">
             <div class="embed-responsive embed-responsive-16by9">
-                <video class="embed-responsive-item" src="/videos/stream/<%= video.id %>" controls>
+                <video class="embed-responsive-item" src="/video/stream/<%= video.id %>" controls>
                     <% if (video.subtitles && video.subtitles.length > 0) { %>
                     <% for (let subtitle of video.subtitles) { %>
                     <track label="<%= subtitle.name  %>" kind="subtitles" srclang="en"
