@@ -1,18 +1,19 @@
 import { Controller, Get, Render, Post, Req, Redirect, BodyParams, Res, PathParams, Next } from '@tsed/common';
-import { BadRequest, NotFound } from "@tsed/exceptions";
-import { VideoItemRepository } from '../repositories/VideoItemRepository';
 import { Response, Request, NextFunction } from 'express'
-import { readdir, ensureDir, pathExists, readFile, readFileSync } from 'fs-extra';
+import { BadRequest, NotFound } from "@tsed/exceptions";
+import { getRepository, Repository } from 'typeorm';
+import * as fs from 'fs';
+import { readdir, ensureDir, pathExists, readFile, readFileSync, stat } from 'fs-extra';
+
+import { VideoItemRepository } from '../repositories/VideoItemRepository';
 import VideoSubtitle from '../entities/VideoSubtitle';
 import VideoItem from '../entities/VideoItem';
 import { VideoSubtitleRepository } from '../repositories/VideoSubtitleRepository';
-import { getRepository, Repository } from 'typeorm';
-import * as fs from 'fs';
 import { FileUtils } from '../utils/FileUtils';
-
-const srt2vtt = require('srt-to-vtt')
+import { appConfig } from '../config/config';
 
 const path = require('path');
+const srt2vtt = require('srt-to-vtt')
 
 
 interface SaveRequest {
@@ -30,14 +31,18 @@ interface VideoOperation {
 export class VideoController {
 
     private readonly videoItemRepository: Repository<VideoItem>;
-    private readonly videoSubtitleRepository: Repository<VideoSubtitle>;
+    private readonly videoSubtitleRepository: VideoSubtitleRepository;
+    private readonly pathTmp: string;
 
     activeStremers: VideoOperation[] = [];
 
+    constructor(
+        videoItemRepository: VideoItemRepository,
+        videoSubtitleRepository: VideoSubtitleRepository) {
+        this.videoItemRepository = videoItemRepository;
+        this.videoSubtitleRepository = videoSubtitleRepository;
 
-    constructor() {
-        this.videoItemRepository = getRepository(VideoItem);
-        this.videoSubtitleRepository = getRepository(VideoSubtitle);
+        this.pathTmp = path.join(__dirname, '..', '..', 'public', 'tmp');
     }
 
     @Get('/add')
@@ -56,6 +61,12 @@ export class VideoController {
 
         if (!existsPath) {
             throw new BadRequest("Folder does not exists!");
+        }
+
+        const statPath = await stat(folderPath);
+
+        if (statPath.isFile()) {
+            return await this._saveFileRequest(folderPath);
         }
 
         const read = await readdir(folderPath);
@@ -95,7 +106,7 @@ export class VideoController {
                 continue;
             }
 
-            if (['mkv', 'mp4', 'avi', 'rmvb', 'mpg', 'mpeg'].includes(extensionFile)) {
+            if (['mkv', 'mp4', 'rmvb', 'mpg', 'mpeg'].includes(extensionFile)) {
                 video = new VideoItem();
                 video.name = file;
                 video.path = fullFilename;
@@ -106,18 +117,18 @@ export class VideoController {
             throw new BadRequest("There's no video found!");
         }
 
-
         try {
             video.subtitles = subtitles;
             const videoInsert = await this.videoItemRepository.save(video);
-            console.log(videoInsert);
-            console.log(video);
 
             for (let subtitle of subtitles) {
                 subtitle.videoItem = video;
-                console.log(subtitle);
                 await this.videoSubtitleRepository.save(subtitle);
             }
+
+            this._takeScreenshotOfVideo(video);
+
+
         } catch (error) {
             console.error(error);
             throw error;
@@ -142,6 +153,18 @@ export class VideoController {
             .where('videoItemId = :videoItemId', { videoItemId: videoItem.id })
             .execute();
         await this.videoItemRepository.delete(videoItem);
+
+        const videoImage = `${id}.png`
+        const pathImage = path.join(this.pathTmp, videoImage);
+        if (await pathExists(pathImage)) {
+            fs.unlink(pathImage, (err) => {
+                if (err) {
+                    console.error(err);
+                }
+            });
+        }
+
+
         return 'Success!';
 
     }
@@ -245,11 +268,63 @@ export class VideoController {
                 data += chunk;
             })
             .on('end', function () {
-                console.log(data);
+                //console.log(data);
                 console.log("End read!");
                 res.send(data);
                 next();
             });
+
+    }
+
+    private async _saveFileRequest(filePath: string) {
+        const extensionFile = FileUtils.getExtensionFromName(filePath);
+        if (!extensionFile)
+            throw new BadRequest("Error on get extension of file!");
+
+        const file = filePath.split(path.sep).pop();
+        if (!file)
+            throw new BadRequest("Error on get extension of file!");
+
+        let video: VideoItem;
+        if (!['mkv', 'mp4', 'rmvb', 'mpg', 'mpeg'].includes(extensionFile)) {
+            throw new BadRequest("Extension not supported!");
+        }
+
+        video = new VideoItem();
+        video.name = file;
+        video.path = filePath;
+        const videoInsert = await this.videoItemRepository.save(video);
+        this._takeScreenshotOfVideo(video);
+
+        return 'Success!';
+    }
+
+    private _takeScreenshotOfVideo(video: VideoItem) {
+        try {
+            if (appConfig.use_ffmpeg) {
+
+
+                const ffmpeg = require('fluent-ffmpeg');
+                const command = new ffmpeg(video.path);
+                const videoPhoto = `${video.id}.png`;
+                command.on('end', () => {
+                    console.log('Screenshots taken');
+                })
+                    .on('error', (err: any) => {
+                        console.error(err);
+                    })
+                    .seek('0:40')
+                    .screenshot({
+                        count: 1,
+                        folder: this.pathTmp,
+                        filename: videoPhoto,
+
+                    });
+
+            }
+        } catch (error) {
+            console.error(error);
+        }
 
     }
 }

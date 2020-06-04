@@ -34,14 +34,15 @@
         $('#form-add-video').on('submit', (event) => {
             event.preventDefault();
 
-
             $('#div-loading').show();
 
             const form = $('#form-add-video');
             var obj = form.serializeToJSON();
 
             $.post(form.attr('action'), obj, (event) => {
-                bootbox.alert(`<i class="far fa-thumbs-up text-success"></i> Success!`);
+                bootbox.alert(`<i class="far fa-thumbs-up text-success"></i> Success!`, () => {
+                    window.location.reload();
+                });
                 $('#div-loading').hide();
             })
                 .fail((event) => {

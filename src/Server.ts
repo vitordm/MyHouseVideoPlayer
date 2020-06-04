@@ -14,6 +14,10 @@ const cons = require("consolidate");
 const rootDir = __dirname;
 
 @ServerSettings({
+  logger: {
+    level: 'warn'
+  },
+
   rootDir,
   viewsDir: `${rootDir}/views`,
   statics: {

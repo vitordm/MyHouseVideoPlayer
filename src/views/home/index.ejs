@@ -14,9 +14,9 @@
         <div class="row">
 
             <% for (let video of videos) { %>
-            <div class="col-4">
-                <div class="card" style="width: 18rem;">
-                    <img src="/assets/libs/img/flat-clapperboard-icon_1063-38.jpg" class="card-img-top" alt="movie">
+            <div class="col-12 col-md-4">
+                <div class="card">
+                    <img src="<%= findImage(video.id) %>" class="card-img-top" alt="movie">
                     <div class="card-body">
                         <h5 class="card-title"><%= video.name %></h5>
                         <p class="card-text">
@@ -48,8 +48,7 @@
     <%- include('../partials/scripts.ejs') %>
     <script>
         $('.btn-delete-video').click((event) => {
-            debugger;
-            const btn = $(event.target);
+            const btn = $(event.currentTarget);
             const refId = btn.attr('ref');
             const refName = btn.attr('ref_name');
 
@@ -58,7 +57,9 @@
                     return;
 
                 $.post('/video/delete', { id: refId }, (event) => {
-                    bootbox.alert(`<i class="far fa-thumbs-up text-success"></i> Success!`);
+                    bootbox.alert(`<i class="far fa-thumbs-up text-success"></i> Success!`, () => {
+                        window.location.reload();
+                    });
                 })
             })
         })
