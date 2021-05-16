@@ -18,7 +18,7 @@
     "@fortawesome/fontawesome-free": "^5.13.0",
     "@tsed/ajv": "5.52.3",
     "@tsed/common": "5.52.3",
-    "@tsed/core": "5.52.3",
+    "@tsed/core": "5.65.7",
     "@tsed/di": "5.52.3",
     "@tsed/socketio": "5.52.3",
     "@tsed/swagger": "5.52.3",
