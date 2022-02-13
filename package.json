@@ -24,7 +24,7 @@
     "@tsed/swagger": "5.52.3",
     "@tsed/typeorm": "5.52.3",
     "@types/swagger-schema-official": "2.0.20",
-    "ajv": "6.12.2",
+    "ajv": "6.12.3",
     "body-parser": "1.19.0",
     "bootbox": "^5.4.0",
     "bootstrap": "^4.4.1",
